@@ -1,0 +1,643 @@
+[
+    {
+        "id": "tab_a",
+        "type": "tab",
+        "label": "Pipeline A - Data Ingestion",
+        "disabled": false
+    },
+    {
+        "id": "tab_b",
+        "type": "tab",
+        "label": "Pipeline B - Decision Logic",
+        "disabled": false
+    },
+    {
+        "id": "tab_c",
+        "type": "tab",
+        "label": "Pipeline C - External Alert",
+        "disabled": false
+    },
+    {
+        "id": "inj_sample",
+        "type": "inject",
+        "z": "tab_a",
+        "name": "Repeating sample (9.5C)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "fridge/sensor",
+        "payload": "{\"unit_id\":\"FRIDGE-01\",\"temp\":9.5,\"door_open\":false}",
+        "payloadType": "json",
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "dbg_input",
+                "link_to_decision"
+            ]
+        ]
+    },
+    {
+        "id": "inj_safe",
+        "type": "inject",
+        "z": "tab_a",
+        "name": "Test - Safe (5.0C)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "fridge/sensor",
+        "payload": "{\"unit_id\":\"FRIDGE-01\",\"temp\":5.0,\"door_open\":false}",
+        "payloadType": "json",
+        "x": 165,
+        "y": 200,
+        "wires": [
+            [
+                "link_to_decision"
+            ]
+        ]
+    },
+    {
+        "id": "inj_low",
+        "type": "inject",
+        "z": "tab_a",
+        "name": "Test - Below range (1.0C)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "fridge/sensor",
+        "payload": "{\"unit_id\":\"FRIDGE-01\",\"temp\":1.0,\"door_open\":false}",
+        "payloadType": "json",
+        "x": 175,
+        "y": 240,
+        "wires": [
+            [
+                "link_to_decision"
+            ]
+        ]
+    },
+    {
+        "id": "inj_warning",
+        "type": "inject",
+        "z": "tab_a",
+        "name": "Test - Warning (9.5C)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "fridge/sensor",
+        "payload": "{\"unit_id\":\"FRIDGE-01\",\"temp\":9.5,\"door_open\":false}",
+        "payloadType": "json",
+        "x": 170,
+        "y": 280,
+        "wires": [
+            [
+                "link_to_decision"
+            ]
+        ]
+    },
+    {
+        "id": "inj_critical",
+        "type": "inject",
+        "z": "tab_a",
+        "name": "Test - Critical (13C)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "fridge/sensor",
+        "payload": "{\"unit_id\":\"FRIDGE-01\",\"temp\":13,\"door_open\":false}",
+        "payloadType": "json",
+        "x": 170,
+        "y": 360,
+        "wires": [
+            [
+                "link_to_decision"
+            ]
+        ]
+    },
+    {
+        "id": "inj_door",
+        "type": "inject",
+        "z": "tab_a",
+        "name": "Test - Door left open",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "fridge/sensor",
+        "payload": "{\"unit_id\":\"FRIDGE-01\",\"temp\":6.0,\"door_open\":true}",
+        "payloadType": "json",
+        "x": 160,
+        "y": 440,
+        "wires": [
+            [
+                "link_to_decision"
+            ]
+        ]
+    },
+    {
+        "id": "dbg_input",
+        "type": "debug",
+        "z": "tab_a",
+        "name": "Raw sensor input",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "link_to_decision",
+        "type": "link out",
+        "z": "tab_a",
+        "name": "To Pipeline B",
+        "mode": "link",
+        "links": [
+            "link_from_ingestion"
+        ],
+        "x": 400,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "link_from_ingestion",
+        "type": "link in",
+        "z": "tab_b",
+        "name": "From Pipeline A",
+        "links": [
+            "link_to_decision"
+        ],
+        "x": 100,
+        "y": 280,
+        "wires": [
+            [
+                "fn_decision"
+            ]
+        ]
+    },
+    {
+        "id": "fn_decision",
+        "type": "function",
+        "z": "tab_b",
+        "name": "Check Temperature & Door",
+        "func": "let data = msg.payload;\n\nif (typeof data === \"string\") {\n    try {\n        data = JSON.parse(data);\n    } catch (e) {\n        node.error(\"Invalid JSON sensor data\", msg);\n        return null;\n    }\n}\n\nlet temp = Number(data.temp);\nlet doorOpen = data.door_open === true;\n\nif (Number.isNaN(temp)) {\n    node.error(\"Temperature is missing or invalid\", msg);\n    return null;\n}\n\n// track how long the door has been open using node context\nlet doorSince = context.get(\"doorSince\") || 0;\n\nif (doorOpen && doorSince === 0) {\n    doorSince = Date.now();\n    context.set(\"doorSince\", doorSince);\n}\n\nif (!doorOpen) {\n    doorSince = 0;\n    context.set(\"doorSince\", 0);\n}\n\nlet doorSeconds = doorSince ? Math.floor((Date.now() - doorSince) / 1000) : 0;\nlet status = \"Safe\";\nlet fan = false;\nlet critical = false;\nlet reason = \"Temperature is in the normal 2.0-8.0C range.\";\n\nif (temp > 12 || doorSeconds > 30) {\n    status = \"Critical\";\n    critical = true;\n    fan = true;\n    if (temp > 12 && doorSeconds > 30) {\n        reason = \"Temperature is above 12C and the door has been open for more than 30 seconds.\";\n    } else if (temp > 12) {\n        reason = \"Temperature is above 12C.\";\n    } else {\n        reason = \"Door has been open for more than 30 seconds.\";\n    }\n} else if (temp > 8) {\n    status = \"Warning\";\n    fan = true;\n    reason = \"Temperature is above 8C, so the auxiliary cooling fan is ON.\";\n} else if (temp < 2) {\n    // below the normal band - not part of the original spec's warning/critical\n    // tiers, but flagged separately so it isn't silently reported as \"Safe\"\n    status = \"Low\";\n    reason = \"Temperature is below the normal 2.0C floor.\";\n}\n\nmsg.payload = {\n    unit_id: data.unit_id || \"FRIDGE-01\",\n    temp: temp,\n    door_open: doorOpen,\n    door_open_seconds: doorSeconds,\n    status: status,\n    fan: fan,\n    critical: critical,\n    reason: reason\n};\n\nlet statusMsg = {payload: status};\nlet fanMsg = {payload: fan ? \"FAN ON\" : \"FAN OFF\"};\nlet alarmMsg = {\n    payload: critical ? \"ALARM: \" + reason : \"No critical alarm\"\n};\nlet alertMsg = {\n    payload: {\n        unit_id: msg.payload.unit_id,\n        temperature: temp,\n        door_open: doorOpen,\n        door_open_seconds: doorSeconds,\n        status: status,\n        message: reason\n    }\n};\n\nif (critical) {\n    return [statusMsg, fanMsg, alarmMsg, alertMsg];\n}\n\nreturn [statusMsg, fanMsg, alarmMsg, null];\n",
+        "outputs": 4,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 280,
+        "wires": [
+            [
+                "ui_status"
+            ],
+            [
+                "dbg_fan"
+            ],
+            [
+                "ui_alarm"
+            ],
+            [
+                "link_to_alert"
+            ]
+        ]
+    },
+    {
+        "id": "ui_tab",
+        "type": "ui_tab",
+        "name": "Fridge Monitor",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "ui_group",
+        "type": "ui_group",
+        "name": "Fridge Status",
+        "tab": "ui_tab",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "ui_status",
+        "type": "ui_text",
+        "z": "tab_b",
+        "group": "ui_group",
+        "order": 1,
+        "width": 6,
+        "height": 1,
+        "name": "Status Display",
+        "label": "Fridge Status",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": "",
+        "font": "",
+        "fontSize": "",
+        "color": "",
+        "x": 690,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "ui_alarm",
+        "type": "ui_text",
+        "z": "tab_b",
+        "group": "ui_group",
+        "order": 2,
+        "width": 6,
+        "height": 1,
+        "name": "Visual Alarm",
+        "label": "Alarm",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": "font-weight:bold;",
+        "font": "",
+        "fontSize": "",
+        "color": "",
+        "x": 690,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "dbg_fan",
+        "type": "debug",
+        "z": "tab_b",
+        "name": "Aux cooling fan state",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 690,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "link_to_alert",
+        "type": "link out",
+        "z": "tab_b",
+        "name": "To Pipeline C (critical only)",
+        "mode": "link",
+        "links": [
+            "link_from_decision"
+        ],
+        "x": 690,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "link_from_decision",
+        "type": "link in",
+        "z": "tab_c",
+        "name": "From Pipeline B",
+        "links": [
+            "link_to_alert"
+        ],
+        "x": 100,
+        "y": 180,
+        "wires": [
+            [
+                "http_alert"
+            ]
+        ]
+    },
+    {
+        "id": "http_alert",
+        "type": "http request",
+        "z": "tab_c",
+        "name": "Send Emergency Alert",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://webhook.site/REPLACE-WITH-YOUR-UNIQUE-URL",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "Content-Type",
+                "keyValue": "",
+                "valueType": "application/json",
+                "valueValue": ""
+            }
+        ],
+        "x": 340,
+        "y": 180,
+        "wires": [
+            [
+                "dbg_http"
+            ]
+        ]
+    },
+    {
+        "id": "dbg_http",
+        "type": "debug",
+        "z": "tab_c",
+        "name": "External service response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 620,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "tab_q3",
+        "type": "tab",
+        "label": "Question 3 - Dashboard UI",
+        "disabled": false,
+        "info": "Operator dashboard for live temperature, humidity, status, manual fan control and temperature history."
+    },
+    {
+        "id": "ui_group_q3",
+        "type": "ui_group",
+        "name": "Operator Dashboard",
+        "tab": "ui_tab",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "inj_q3",
+        "type": "inject",
+        "z": "tab_q3",
+        "name": "Simulated Sensor Data",
+        "props": [
+            {
+                "p": "payload",
+                "v": "{\"unit_id\":\"FRIDGE-01\",\"temp\":5.5,\"humidity\":62,\"door_open\":false}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "5",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "fridge/sensor",
+        "payload": "{\"unit_id\":\"FRIDGE-01\",\"temp\":5.5,\"humidity\":62,\"door_open\":false}",
+        "payloadType": "json",
+        "x": 150,
+        "y": 100,
+        "wires": [
+            [
+                "fn_q3"
+            ]
+        ]
+    },
+    {
+        "id": "fn_q3",
+        "type": "function",
+        "z": "tab_q3",
+        "name": "Prepare Dashboard Data",
+        "func": "let data = msg.payload;\nif (typeof data === \"string\") {\n    try { data = JSON.parse(data); }\n    catch (e) { node.error(\"Invalid sensor JSON\", msg); return null; }\n}\n\nlet temp = Number(data.temp);\nlet humidity = Number(data.humidity);\n\nif (Number.isNaN(temp) || Number.isNaN(humidity)) {\n    node.error(\"Temperature or humidity is missing/invalid\", msg);\n    return null;\n}\n\nlet status = \"NORMAL\";\nlet color = \"green\";\n\nif (temp > 12 || data.door_open === true) {\n    status = \"ALARM\";\n    color = \"red\";\n} else if (temp > 8) {\n    status = \"WARNING\";\n    color = \"orange\";\n}\n\nlet tempMsg = {payload: temp};\nlet humidityMsg = {payload: humidity};\nlet statusMsg = {payload: {status: status, color: color}};\nlet chartMsg = {payload: temp};\n\nreturn [tempMsg, humidityMsg, statusMsg, chartMsg];",
+        "outputs": 4,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 100,
+        "wires": [
+            [
+                "ui_gauge_temp_q3"
+            ],
+            [
+                "ui_gauge_humidity_q3"
+            ],
+            [
+                "ui_status_light_q3"
+            ],
+            [
+                "ui_chart_temp_q3"
+            ]
+        ]
+    },
+    {
+        "id": "ui_gauge_temp_q3",
+        "type": "ui_gauge",
+        "z": "tab_q3",
+        "name": "Live Temperature Gauge",
+        "group": "ui_group_q3",
+        "order": 1,
+        "width": 3,
+        "height": 3,
+        "gtype": "gage",
+        "title": "Temperature",
+        "label": "\u00b0C",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "20",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "8",
+        "seg2": "12",
+        "diff": false,
+        "className": "",
+        "x": 700,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "ui_gauge_humidity_q3",
+        "type": "ui_gauge",
+        "z": "tab_q3",
+        "name": "Live Humidity Gauge",
+        "group": "ui_group_q3",
+        "order": 2,
+        "width": 3,
+        "height": 3,
+        "gtype": "gage",
+        "title": "Humidity",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "70",
+        "seg2": "85",
+        "diff": false,
+        "className": "",
+        "x": 700,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "ui_status_light_q3",
+        "type": "ui_template",
+        "z": "tab_q3",
+        "group": "ui_group_q3",
+        "name": "Color-Coded Status Light",
+        "order": 3,
+        "width": 6,
+        "height": 2,
+        "format": "<div style=\"text-align:center; font-size:20px; padding:8px;\">\n<span ng-style=\"{'display':'inline-block','width':'24px','height':'24px','border-radius':'50%','background-color':msg.payload.color,'margin-right':'10px','vertical-align':'middle'}\"></span>\n<strong>{{msg.payload.status}}</strong>\n</div>",
+        "storeOutMessages": false,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 700,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "ui_switch_fan_q3",
+        "type": "ui_switch",
+        "z": "tab_q3",
+        "name": "Manual Auxiliary Fan",
+        "label": "Auxiliary Cooling Fan",
+        "tooltip": "Manually turn the auxiliary fan ON or OFF",
+        "group": "ui_group_q3",
+        "order": 4,
+        "width": 3,
+        "height": 1,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "manual_fan",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "fa-power-off",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "fa-power-off",
+        "offcolor": "",
+        "animate": true,
+        "className": "",
+        "x": 170,
+        "y": 300,
+        "wires": [
+            [
+                "ui_fan_state_q3"
+            ]
+        ]
+    },
+    {
+        "id": "ui_fan_state_q3",
+        "type": "ui_text",
+        "z": "tab_q3",
+        "group": "ui_group_q3",
+        "order": 5,
+        "width": 3,
+        "height": 1,
+        "name": "Fan State",
+        "label": "Fan State",
+        "format": "{{msg.payload === true ? 'ON' : 'OFF'}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": "font-weight:bold;",
+        "font": "",
+        "fontSize": "",
+        "color": "",
+        "x": 430,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "ui_chart_temp_q3",
+        "type": "ui_chart",
+        "z": "tab_q3",
+        "name": "Temperature History",
+        "group": "ui_group_q3",
+        "order": 6,
+        "width": 6,
+        "height": 5,
+        "label": "Temperature History",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "Waiting for temperature data...",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "20",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#ffbb78",
+            "#2ca02c"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 700,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    }
+]
